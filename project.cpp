@@ -14,11 +14,16 @@ class EventInfo {
         double x, y;
 };
 
+class SegmentInfo {
+    public:
+        double a, b, c, t1, t2;
+};
+
 bool compareEvents(const EventInfo first, const EventInfo second) {
     return first.x < second.x;
 }
 
-void readInput(list<EventInfo>* eventQ, map<int,vector<double>>* segments) {
+void readInput(list<EventInfo>* eventQ, map<int,SegmentInfo>* segments) {
     ifstream inFile("input.txt");
     int segmentsNum = 0;
     if (inFile.is_open()) {
@@ -31,15 +36,14 @@ void readInput(list<EventInfo>* eventQ, map<int,vector<double>>* segments) {
         int i;
         double a, b, c, t1, t2;
         for (i=0;i<segmentsNum;i++) {
-            vector<double> segment;
+            SegmentInfo segment;
             inFile >> a >> b >> c >> t1 >> t2;
-            vector<double>::iterator it = segment.begin();
-            it = segment.insert(it,a);
-            it = segment.insert(++it,b);
-            it = segment.insert(++it,c);
-            it = segment.insert(++it,t1);
-            segment.insert(++it,t2);
-            (*segments).insert( std::pair<int, vector<double>>(i, segment) ); //logn
+            segment.a = a;
+            segment.b = b;
+            segment.c = c;
+            segment.t1 = t1;
+            segment.t2 = t2;
+            (*segments).insert( std::pair<int, SegmentInfo>(i, segment) ); //logn
             //start point
             EventInfo mySInfo;
             mySInfo.involvedSegments.push_back(i); mySInfo.type = 'S';
@@ -67,9 +71,14 @@ void printStatus(set<int> status) {
     return;
 }
 
+void run(list<EventInfo>& eventQ, set<int>& status, map<int,SegmentInfo> segments) {
+    while (eventQ.size()>0) {
+
+    }
+}
+
 int main() {
-    double minX=0.0; //value from which we should start the sweep
-    map<int,vector<double>> segments;
+    map<int,SegmentInfo> segments;
     //initialize event queue and read segment equations
     list<EventInfo> eventQ;
     readInput(&eventQ, &segments);
