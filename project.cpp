@@ -4,6 +4,7 @@
 #include <map>
 #include <set>
 #include <list>
+#include <string>
 using namespace std;
 
 bool comparePoints(const pair<int,double> first, const pair<int,double> second) {
@@ -41,6 +42,16 @@ void readInput(list<pair<int,double>>* points, map<int,vector<double>>* segments
     return;
 }
 
+void printStatus(set<int> status) {
+    cout << "status: " << status.size() << ":";
+    set<int>::iterator it = status.begin();
+    for (it; it != status.end(); it++) {
+        cout << " " << (*it);
+    }
+    cout << "\n";
+    return;
+}
+
 int main() {
     double minX=0.0; //value from which we should start the sweep
     map<int,vector<double>> segments;
@@ -61,4 +72,11 @@ int main() {
     //initialize status
     set<int> status;
     set<int>::iterator statusIt;
+    string param;
+    do {
+        cin >> param;
+        if (param.compare("status") == 0) {
+            printStatus(status);
+        }
+    } while (param.compare("end") != 0);
 }
