@@ -7,11 +7,18 @@
 #include <string>
 using namespace std;
 
-bool comparePoints(const pair<int,double> first, const pair<int,double> second) {
-    return first.second < second.second;
+class EventInfo {
+    public:
+        char type;
+        vector<int> involvedSegments;
+        double x, y;
+};
+
+bool compareEvents(const EventInfo first, const EventInfo second) {
+    return first.x < second.x;
 }
 
-void readInput(list<pair<int,double>>* points, map<int,vector<double>>* segments) {
+void readInput(list<EventInfo>* eventQ, map<int,vector<double>>* segments) {
     ifstream inFile("input.txt");
     int segmentsNum = 0;
     if (inFile.is_open()) {
@@ -33,11 +40,19 @@ void readInput(list<pair<int,double>>* points, map<int,vector<double>>* segments
             it = segment.insert(++it,t1);
             segment.insert(++it,t2);
             (*segments).insert( std::pair<int, vector<double>>(i, segment) ); //logn
-            (*points).push_back( pair<int,double>(i, t1) ); //const
-            (*points).push_back( pair<int,double>(i, t2) );
+            //start point
+            EventInfo mySInfo;
+            mySInfo.involvedSegments.push_back(i); mySInfo.type = 'S';
+            mySInfo.x = t1; mySInfo.y = a*t1*t1 + b*t1 + c;
+            (*eventQ).push_back(mySInfo);
+            //end point
+            EventInfo myEInfo;
+            myEInfo.involvedSegments.push_back(i); myEInfo.type = 'E';
+            myEInfo.x = t2; myEInfo.y = a*t2*t2 + b*t2 + c;
+            (*eventQ).push_back(myEInfo);
         }
     }
-    (*points).sort(comparePoints);
+    (*eventQ).sort(compareEvents);
     inFile.close();
     return;
 }
@@ -55,20 +70,9 @@ void printStatus(set<int> status) {
 int main() {
     double minX=0.0; //value from which we should start the sweep
     map<int,vector<double>> segments;
-    list<pair<int,double>> points;
-    readInput(&points, &segments);
-    //printing the read input for debug purposes
-    for (map<int,vector<double>>::iterator it = segments.begin(); it != segments.end(); it++) {
-        int i;
-        cout << it->first << " : ";
-        for (i=0;i<(it->second).size();i++) {
-            cout << (it->second).at(i) << " ";
-        }
-        cout << "\n";
-    }
-    for (list<pair<int,double>>::iterator listIt = points.begin(); listIt != points.end(); listIt++) {
-        cout << (*listIt).first << " => " << (*listIt).second << endl;
-    }
+    //initialize event queue and read segment equations
+    list<EventInfo> eventQ;
+    readInput(&eventQ, &segments);
     //initialize status
     set<int> status;
     set<int>::iterator statusIt;
