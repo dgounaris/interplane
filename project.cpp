@@ -137,7 +137,6 @@ char execNextEvent(set<EventInfo,leastEvent>& eventQ, map<SegmentInfo,int,leastS
         totals++;
         //only 1 involved segment
         SegmentInfo infoToInsert = nextEvent.involvedSegments.front();
-        recreateStatus(status);
         status.insert( std::pair<SegmentInfo,int>(infoToInsert, infoToInsert.ref) );
         //find prev and next
         map<SegmentInfo,int,leastSegment>::iterator currIt = status.find(infoToInsert);
@@ -150,7 +149,6 @@ char execNextEvent(set<EventInfo,leastEvent>& eventQ, map<SegmentInfo,int,leastS
     }
     if (nextEvent.type == 'E') {
         //only 1 segment involved
-        recreateStatus(status);
         SegmentInfo toDelete = nextEvent.involvedSegments.front();
         map<SegmentInfo,int,leastSegment>::iterator sIt = status.find(toDelete);
         if (sIt != status.begin() && sIt != std::prev(status.end())) {
@@ -162,9 +160,18 @@ char execNextEvent(set<EventInfo,leastEvent>& eventQ, map<SegmentInfo,int,leastS
         totali++;
         //intersecting with curves does not mean swapping!
         //it may be a tangent line on a curve
-        //so, we move the plane sweep a small amount to the right, so that we can deduct the final format
-        planeSweepX += 0.001;
-        recreateStatus(status);
+        //go a bit back to avoid unexpected bad clauses through the tree
+        //then find and erase the 2 intersecting segments O(2logn)
+        planeSweepX -= 0.0001;
+        map<SegmentInfo,int,leastSegment>::iterator old1 = status.find(nextEvent.involvedSegments.at(0));
+        status.erase(old1);
+        map<SegmentInfo,int,leastSegment>::iterator old2 = status.find(nextEvent.involvedSegments.at(1));
+        status.erase(old2);
+        //go a bit forward than the intersection point, again to avoid unexpected behaviour
+        planeSweepX += 0.0002;
+        //reinserting in correct order is O(2logn)
+        status.insert( std::pair<SegmentInfo, int>(nextEvent.involvedSegments.at(0), nextEvent.involvedSegments.at(0).ref) );
+        status.insert( std::pair<SegmentInfo, int>(nextEvent.involvedSegments.at(1), nextEvent.involvedSegments.at(1).ref) );
         //suppose 2 segments in intersection
         map<SegmentInfo,int,leastSegment>::iterator si1 = status.find(nextEvent.involvedSegments.at(0));
         map<SegmentInfo,int,leastSegment>::iterator si2 = status.find(nextEvent.involvedSegments.at(1));
