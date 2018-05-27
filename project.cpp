@@ -1,7 +1,6 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <map>
 #include <set>
 #include <list>
 #include <string>
@@ -41,7 +40,7 @@ struct leastEvent {
     }
 };
 
-void readInput(set<EventInfo,leastEvent>& eventQ, map<int,SegmentInfo>* segments) {
+void readInput(set<EventInfo,leastEvent>& eventQ) {
     ifstream inFile(inputFile);
     int segmentsNum = 0;
     if (inFile.is_open()) {
@@ -62,7 +61,6 @@ void readInput(set<EventInfo,leastEvent>& eventQ, map<int,SegmentInfo>* segments
             segment.t1 = t1;
             segment.t2 = t2;
             segment.ref = i;
-            (*segments).insert( std::pair<int, SegmentInfo>(i, segment) ); //logn
             //start point
             EventInfo mySInfo;
             mySInfo.involvedSegments.push_back(segment); mySInfo.type = 'S';
@@ -77,14 +75,6 @@ void readInput(set<EventInfo,leastEvent>& eventQ, map<int,SegmentInfo>* segments
     }
     inFile.close();
     return;
-}
-
-void recreateStatus(map<SegmentInfo, int, leastSegment>& status) {
-    map<SegmentInfo, int, leastSegment> newStatus;
-    for(map<SegmentInfo, int, leastSegment>::iterator sIt = status.begin(); sIt != status.end(); sIt++) {
-        newStatus.insert( pair<SegmentInfo,int>(sIt->first,sIt->second) );
-    }
-    status = newStatus;
 }
 
 int computeIntersections(set<EventInfo,leastEvent>& eventQ, SegmentInfo s1, SegmentInfo s2) {
@@ -115,16 +105,16 @@ int computeIntersections(set<EventInfo,leastEvent>& eventQ, SegmentInfo s1, Segm
     //event in eventQ, but count it as computed!
 }
 
-void printStatus(map<SegmentInfo,int,leastSegment> status) {
+void printStatus(set<SegmentInfo,leastSegment> status) {
     printf("status: %d:", status.size());
-    map<SegmentInfo,int,leastSegment>::iterator sIt = status.begin();
+    set<SegmentInfo,leastSegment>::iterator sIt = status.begin();
     for (sIt;sIt != status.end();sIt++) {
-        printf(" %d", sIt->second);
+        printf(" %d", sIt->ref);
     }
     printf("\n");
 }
 
-char execNextEvent(set<EventInfo,leastEvent>& eventQ, map<SegmentInfo,int,leastSegment>& status, map<int,SegmentInfo> segments, bool log=false) {
+char execNextEvent(set<EventInfo,leastEvent>& eventQ, set<SegmentInfo,leastSegment>& status, bool log=false) {
     if (eventQ.empty()) {
         printf("error: no more events\n");
         return 'R';
@@ -137,22 +127,22 @@ char execNextEvent(set<EventInfo,leastEvent>& eventQ, map<SegmentInfo,int,leastS
         totals++;
         //only 1 involved segment
         SegmentInfo infoToInsert = nextEvent.involvedSegments.front();
-        status.insert( std::pair<SegmentInfo,int>(infoToInsert, infoToInsert.ref) );
+        status.insert( infoToInsert );
         //find prev and next
-        map<SegmentInfo,int,leastSegment>::iterator currIt = status.find(infoToInsert);
+        set<SegmentInfo,leastSegment>::iterator currIt = status.find(infoToInsert);
         if (currIt != status.begin()) {
-            intersectionsC += computeIntersections(eventQ, currIt->first, std::prev(currIt)->first);
+            intersectionsC += computeIntersections(eventQ, *currIt, *std::prev(currIt));
         }
         if (currIt != std::prev(status.end())) {
-            intersectionsC += computeIntersections(eventQ, currIt->first, std::next(currIt)->first);
+            intersectionsC += computeIntersections(eventQ, *currIt, *std::next(currIt));
         }
     }
     if (nextEvent.type == 'E') {
         //only 1 segment involved
         SegmentInfo toDelete = nextEvent.involvedSegments.front();
-        map<SegmentInfo,int,leastSegment>::iterator sIt = status.find(toDelete);
+        set<SegmentInfo,leastSegment>::iterator sIt = status.find(toDelete);
         if (sIt != status.begin() && sIt != std::prev(status.end())) {
-            intersectionsC += computeIntersections(eventQ, std::prev(sIt)->first, std::next(sIt)->first);
+            intersectionsC += computeIntersections(eventQ, *std::prev(sIt), *std::next(sIt));
         }
         status.erase(toDelete);
     }
@@ -163,31 +153,31 @@ char execNextEvent(set<EventInfo,leastEvent>& eventQ, map<SegmentInfo,int,leastS
         //go a bit back to avoid unexpected bad clauses through the tree
         //then find and erase the 2 intersecting segments O(2logn)
         planeSweepX -= 0.0001;
-        map<SegmentInfo,int,leastSegment>::iterator old1 = status.find(nextEvent.involvedSegments.at(0));
+        set<SegmentInfo,leastSegment>::iterator old1 = status.find(nextEvent.involvedSegments.at(0));
         status.erase(old1);
-        map<SegmentInfo,int,leastSegment>::iterator old2 = status.find(nextEvent.involvedSegments.at(1));
+        set<SegmentInfo,leastSegment>::iterator old2 = status.find(nextEvent.involvedSegments.at(1));
         status.erase(old2);
         //go a bit forward than the intersection point, again to avoid unexpected behaviour
         planeSweepX += 0.0002;
         //reinserting in correct order is O(2logn)
-        status.insert( std::pair<SegmentInfo, int>(nextEvent.involvedSegments.at(0), nextEvent.involvedSegments.at(0).ref) );
-        status.insert( std::pair<SegmentInfo, int>(nextEvent.involvedSegments.at(1), nextEvent.involvedSegments.at(1).ref) );
+        status.insert(nextEvent.involvedSegments.at(0));
+        status.insert(nextEvent.involvedSegments.at(1));
         //suppose 2 segments in intersection
-        map<SegmentInfo,int,leastSegment>::iterator si1 = status.find(nextEvent.involvedSegments.at(0));
-        map<SegmentInfo,int,leastSegment>::iterator si2 = status.find(nextEvent.involvedSegments.at(1));
+        set<SegmentInfo,leastSegment>::iterator si1 = status.find(nextEvent.involvedSegments.at(0));
+        set<SegmentInfo,leastSegment>::iterator si2 = status.find(nextEvent.involvedSegments.at(1));
         //check intersections of si1 with new adjacents
         if (si1 != status.begin()) {
-            intersectionsC += computeIntersections(eventQ, si1->first, std::prev(si1)->first);
+            intersectionsC += computeIntersections(eventQ, *si1, *std::prev(si1));
         }
         if (si1 != std::prev(status.end())) {
-            intersectionsC += computeIntersections(eventQ, si1->first, std::next(si1)->first);
+            intersectionsC += computeIntersections(eventQ, *si1, *std::next(si1));
         }
         //avoid duplicates
         if (si2 != status.begin() && std::prev(si2) != si1) {
-            intersectionsC += computeIntersections(eventQ, si2->first, std::prev(si2)->first);
+            intersectionsC += computeIntersections(eventQ, *si2, *std::prev(si2));
         }
         if (si2 != std::prev(status.end()) && std::next(si2) != si1) {
-            intersectionsC += computeIntersections(eventQ, si2->first, std::next(si2)->first);
+            intersectionsC += computeIntersections(eventQ, *si2, *std::next(si2));
         }
     }
     if (log)
@@ -195,31 +185,30 @@ char execNextEvent(set<EventInfo,leastEvent>& eventQ, map<SegmentInfo,int,leastS
     return nextEvent.type;
 }
 
-void run(set<EventInfo,leastEvent>& eventQ, map<SegmentInfo,int,leastSegment>& status, map<int,SegmentInfo> segments) {
+void run(set<EventInfo,leastEvent>& eventQ, set<SegmentInfo,leastSegment>& status) {
     while (eventQ.size()>0) {
-        execNextEvent(eventQ, status, segments, false);
+        execNextEvent(eventQ, status, false);
     }
     printf("summary: %d segments, %d intersections\n", totals, totali);
 }
 
 int main() {
-    map<int,SegmentInfo> segments;
     //initialize event queue and read segment equations
     set<EventInfo, leastEvent> eventQ;
-    readInput(eventQ, &segments);
+    readInput(eventQ);
     //initialize status
-    map<SegmentInfo,int,leastSegment> status;
+    set<SegmentInfo,leastSegment> status;
     string inString;
     cin >> inString;
     do {
         if (inString.compare("step")==0) {
-            execNextEvent(eventQ, status, segments, false);
+            execNextEvent(eventQ, status, false);
         }
         if (inString.compare("step-p")==0) {
-            execNextEvent(eventQ, status, segments, true);
+            execNextEvent(eventQ, status, true);
         }
         if (inString.compare("run")==0) {
-            run(eventQ, status, segments);
+            run(eventQ, status);
             break;
         }
         if (inString.compare("status")==0) {
