@@ -8,6 +8,7 @@
 using namespace std;
 
 static string inputFile = "input.txt";
+static string outputFile = "output.txt";
 
 double planeSweepX;
 //logging variables
@@ -199,8 +200,15 @@ int main() {
     //initialize status
     set<SegmentInfo,leastSegment> status;
     string inString;
-    cin >> inString;
+    ifstream inFile(inputFile);
+    if (!inFile.is_open()) {
+        cout << "Could not load specified input file\n";
+        return 1;
+    }
+    //this redirects stdout to the output file
+    freopen(outputFile.c_str(),"w",stdout);
     do {
+        inFile >> inString;
         if (inString.compare("step")==0) {
             execNextEvent(eventQ, status, false);
         }
@@ -214,6 +222,7 @@ int main() {
         if (inString.compare("status")==0) {
             printStatus(status);
         }
-        cin >> inString;
-    } while(1);
+    } while(!inFile.eof());
+    inFile.close();
+    return 0;
 }
