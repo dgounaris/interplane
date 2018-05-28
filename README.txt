@@ -1,3 +1,5 @@
+Implemented by Dimitris Gounaris and Dimitris Gangas for the course of Geometric Algorithms.
+
 Before running the program, open the project.cpp file and set inputFile and outputFile to the i/o files you want.
 
 To compile and run program:
