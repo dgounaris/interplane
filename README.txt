@@ -1,3 +1,5 @@
+Before running the program, open the project.cpp file and set inputFile and outputFile to the i/o files you want.
+
 To compile and run program:
 g++ -o project project.cpp
 ./project
