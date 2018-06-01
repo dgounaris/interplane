@@ -1,0 +1,14 @@
+S  -2.50 0
+S  -2.00 0
+S   0.00 0
+E   2.00 0
+E   2.50 0
+E   3.00 0
+error: no more events
+error: no more events
+status: 0:
+error: no more events
+error: no more events
+error: no more events
+error: no more events
+summary: 3 segments, 0 intersections
