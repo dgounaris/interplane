@@ -7,7 +7,7 @@
 #include <cmath>
 using namespace std;
 
-static string inputFile = "input.txt";
+static string inputFile = "input2.txt";
 static string outputFile = "output.txt";
 
 double planeSweepX;
@@ -82,7 +82,7 @@ int computeIntersections(set<EventInfo,leastEvent>& eventQ, SegmentInfo s1, Segm
     //using this: https://codereview.stackexchange.com/questions/51011/calculating-the-point-of-intersection-of-two-parabolas
     //if ( ((s2.c-s1.c) + (s1.b-s2.b)*(s1.b-s2.b)/(s1.a-s2.a)) / (s1.a-s2.a) < 0) {
     double D = (s1.b-s2.b)*(s1.b-s2.b) - 4*(s1.a-s2.a)*(s1.c-s2.c);
-    if ( D < 0 ) {   
+    if ( D < 0 ) {
         return 0;
     }
     int intC = 0;
