@@ -7,7 +7,7 @@
 #include <cmath>
 using namespace std;
 
-static string inputFile = "input.txt";
+static string inputFile = "input3.txt";
 static string outputFile = "output.txt";
 
 double planeSweepX;
@@ -17,8 +17,8 @@ static int totali=0;
 
 class SegmentInfo {
     public:
-        int ref;
-        double a, b, c, t1, t2;
+        mutable int ref;
+        mutable double a, b, c, t1, t2;
 };
 
 class EventInfo {
@@ -30,6 +30,8 @@ class EventInfo {
 
 struct leastSegment {
     bool operator()(const SegmentInfo& s1, const SegmentInfo& s2) {
+        //in the case the 2 elements are equals, there is no way we will find the correct since < function is used by find
+        //the way to do this is by changing artificially the planesweepX just for this comparison when 2 equals are found
         return (s1.a*planeSweepX*planeSweepX + s1.b*planeSweepX + s1.c) <
                 (s2.a*planeSweepX*planeSweepX + s2.b*planeSweepX + s2.c);
     }
@@ -118,16 +120,16 @@ int computeIntersections(set<EventInfo,leastEvent>& eventQ, SegmentInfo s1, Segm
     //event in eventQ, but count it as computed!
 }
 
-void printStatus(set<SegmentInfo,leastSegment> status) {
+void printStatus(multiset<SegmentInfo,leastSegment> status) {
     printf("status: %d:", status.size());
-    set<SegmentInfo,leastSegment>::iterator sIt = status.begin();
+    multiset<SegmentInfo,leastSegment>::iterator sIt = status.begin();
     for (sIt;sIt != status.end();sIt++) {
         printf(" %d", sIt->ref);
     }
     printf("\n");
 }
 
-char execNextEvent(set<EventInfo,leastEvent>& eventQ, set<SegmentInfo,leastSegment>& status, bool log=false) {
+char execNextEvent(set<EventInfo,leastEvent>& eventQ, multiset<SegmentInfo,leastSegment>& status, bool log=false) {
     if (eventQ.empty()) {
         printf("error: no more events\n");
         return 'R';
@@ -142,9 +144,9 @@ char execNextEvent(set<EventInfo,leastEvent>& eventQ, set<SegmentInfo,leastSegme
         SegmentInfo infoToInsert = nextEvent.involvedSegments.front();
         status.insert( infoToInsert );
         //find prev and next
-        set<SegmentInfo,leastSegment>::iterator currIt = status.find(infoToInsert);
+        multiset<SegmentInfo,leastSegment>::iterator currIt = status.find(infoToInsert);
         if (currIt != status.begin()) {
-            intersectionsC += computeIntersections(eventQ, *currIt, *std::prev(currIt));
+            intersectionsC += computeIntersections(eventQ, *std::prev(currIt), *currIt);
         }
         if (currIt != std::prev(status.end())) {
             intersectionsC += computeIntersections(eventQ, *currIt, *std::next(currIt));
@@ -153,7 +155,7 @@ char execNextEvent(set<EventInfo,leastEvent>& eventQ, set<SegmentInfo,leastSegme
     if (nextEvent.type == 'E') {
         //only 1 segment involved
         SegmentInfo toDelete = nextEvent.involvedSegments.front();
-        set<SegmentInfo,leastSegment>::iterator sIt = status.find(toDelete);
+        multiset<SegmentInfo,leastSegment>::iterator sIt = status.find(toDelete);
         if (sIt != status.begin() && sIt != std::prev(status.end())) {
             intersectionsC += computeIntersections(eventQ, *std::prev(sIt), *std::next(sIt));
         }
@@ -161,23 +163,30 @@ char execNextEvent(set<EventInfo,leastEvent>& eventQ, set<SegmentInfo,leastSegme
     }
     if (nextEvent.type == 'I') {
         totali++;
-        //intersecting with curves does not mean swapping!
-        //it may be a tangent line on a curve
-        //go a bit back to avoid unexpected bad clauses through the tree
-        //then find and erase the 2 intersecting segments O(2logn)
-        planeSweepX -= 0.0001;
-        set<SegmentInfo,leastSegment>::iterator old1 = status.find(nextEvent.involvedSegments.at(0));
-        status.erase(old1);
-        set<SegmentInfo,leastSegment>::iterator old2 = status.find(nextEvent.involvedSegments.at(1));
-        status.erase(old2);
-        //go a bit forward than the intersection point, again to avoid unexpected behaviour
-        planeSweepX += 0.0002;
-        //reinserting in correct order is O(2logn)
-        status.insert(nextEvent.involvedSegments.at(0));
-        status.insert(nextEvent.involvedSegments.at(1));
+        //supposing only 2 involved segments
+        std::pair<multiset<SegmentInfo,leastSegment>::iterator,multiset<SegmentInfo,leastSegment>::iterator> getIt;
+        getIt = status.equal_range(nextEvent.involvedSegments.at(0));
+        int checkCounter = 0;
+        for (multiset<SegmentInfo,leastSegment>::iterator checkIt = getIt.first; checkIt!=getIt.second; checkIt++) {
+            checkCounter++;
+        }
+        if (checkCounter>2) {
+            cout << "Unexpected number of intersecting segments: " << checkCounter  << " at point: " << planeSweepX << endl;
+        }
+        SegmentInfo tempswap;
+        tempswap.a = getIt.first->a; tempswap.b = getIt.first->b; tempswap.c = getIt.first->c;
+        tempswap.t1 = getIt.first->t1; tempswap.t2 = getIt.first->t2; tempswap.ref = getIt.first->ref;
+        getIt.second--;
+        //cout << "BEFORE " << getIt.first->a << getIt.second->a << endl;
+        SegmentInfo new1;
+        getIt.first->a = getIt.second->a; getIt.first->b = getIt.second->b; getIt.first->c = getIt.second->c;
+        getIt.first->t1 = getIt.second->t1; getIt.first->t2 = getIt.second->t2; getIt.first->ref = getIt.second->ref;
+        getIt.second->a = tempswap.a; getIt.second->b = tempswap.b; getIt.second->c = tempswap.c;
+        getIt.second->t1 = tempswap.t1; getIt.second->t2 = tempswap.t2; getIt.second->ref = tempswap.ref;
         //suppose 2 segments in intersection
-        set<SegmentInfo,leastSegment>::iterator si1 = status.find(nextEvent.involvedSegments.at(0));
-        set<SegmentInfo,leastSegment>::iterator si2 = status.find(nextEvent.involvedSegments.at(1));
+        multiset<SegmentInfo,leastSegment>::iterator si1 = getIt.first;
+        multiset<SegmentInfo,leastSegment>::iterator si2 = getIt.second;
+        //cout << "AFTER " << si1->a << endl;
         //check intersections of si1 with new adjacents
         if (si1 != status.begin()) {
             intersectionsC += computeIntersections(eventQ, *si1, *std::prev(si1));
@@ -198,7 +207,7 @@ char execNextEvent(set<EventInfo,leastEvent>& eventQ, set<SegmentInfo,leastSegme
     return nextEvent.type;
 }
 
-void run(set<EventInfo,leastEvent>& eventQ, set<SegmentInfo,leastSegment>& status) {
+void run(set<EventInfo,leastEvent>& eventQ, multiset<SegmentInfo,leastSegment>& status) {
     while (eventQ.size()>0) {
         execNextEvent(eventQ, status, false);
     }
@@ -210,7 +219,7 @@ int main() {
     set<EventInfo, leastEvent> eventQ;
     readInput(eventQ);
     //initialize status
-    set<SegmentInfo,leastSegment> status;
+    multiset<SegmentInfo,leastSegment> status;
     string inString;
     ifstream inFile(inputFile);
     if (!inFile.is_open()) {
