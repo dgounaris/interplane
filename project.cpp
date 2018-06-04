@@ -161,19 +161,9 @@ char execNextEvent(set<EventInfo,leastEvent>& eventQ, multiset<SegmentInfo,least
         //supposing only 2 involved segments
         std::pair<multiset<SegmentInfo,leastSegment>::iterator,multiset<SegmentInfo,leastSegment>::iterator> getIt;
         getIt = status.equal_range(nextEvent.involvedSegments.at(0));
-        //cout << "---" << endl;
-        //cout << nextEvent.involvedSegments.at(0).ref << endl;
-        //cout << nextEvent.involvedSegments.at(0).a*planeSweepX*planeSweepX + nextEvent.involvedSegments.at(0).b*planeSweepX + nextEvent.involvedSegments.at(0).c << endl;
         int checkCounter = 0;
-        /*for (multiset<SegmentInfo,leastSegment>::iterator checkIt = status.begin(); checkIt!=status.end(); checkIt++) {
-            checkCounter++;
-            cout << checkIt->ref << endl;
-            cout << checkIt->a*planeSweepX*planeSweepX + checkIt->b*planeSweepX + checkIt->c << endl;
-        }*/
         for (multiset<SegmentInfo,leastSegment>::iterator checkIt = getIt.first; checkIt!=getIt.second; checkIt++) {
             checkCounter++;
-            //cout << checkIt->ref << endl;
-            //cout << checkIt->a*planeSweepX*planeSweepX + checkIt->b*planeSweepX + checkIt->c << endl;
         }
         if (checkCounter>2) {
             cout << "Unexpected number of intersecting segments: " << checkCounter  << " at point: " << planeSweepX << endl;
