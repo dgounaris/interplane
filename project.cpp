@@ -32,7 +32,8 @@ struct leastSegment {
     bool operator()(const SegmentInfo& s1, const SegmentInfo& s2) {
         //in the case the 2 elements are equals, there is no way we will find the correct since < function is used by find
         //the way to do this is by changing artificially the planesweepX just for this comparison when 2 equals are found
-        return (s1.a*planeSweepX*planeSweepX + s1.b*planeSweepX + s1.c) <
+        //I add a small offset to account for inaccuracies
+        return (s1.a*planeSweepX*planeSweepX + s1.b*planeSweepX + s1.c + 0.000001) <
                 (s2.a*planeSweepX*planeSweepX + s2.b*planeSweepX + s2.c);
     }
 };
@@ -81,8 +82,6 @@ void readInput(set<EventInfo,leastEvent>& eventQ) {
 }
 
 int computeIntersections(set<EventInfo,leastEvent>& eventQ, SegmentInfo s1, SegmentInfo s2) {
-    //using this: https://codereview.stackexchange.com/questions/51011/calculating-the-point-of-intersection-of-two-parabolas
-    //if ( ((s2.c-s1.c) + (s1.b-s2.b)*(s1.b-s2.b)/(s1.a-s2.a)) / (s1.a-s2.a) < 0) {
     double intX1;
     double intX2;
     int intC = 0;
@@ -98,8 +97,6 @@ int computeIntersections(set<EventInfo,leastEvent>& eventQ, SegmentInfo s1, Segm
         intX1 = (-(s1.b-s2.b) + sqrt(D))/(2*(s1.a-s2.a));
         intX2 = (-(s1.b-s2.b) - sqrt(D))/(2*(s1.a-s2.a));
     }
-    //double intX1 = sqrt( ((s2.c-s1.c) + (s1.b-s2.b)*(s1.b-s2.b)/(s1.a-s2.a)) / (s1.a-s2.a) ) - (s1.b-s2.b)/(2*(s1.a-s2.a));
-    //double intX2 = -sqrt( ((s2.c-s1.c) + (s1.b-s2.b)*(s1.b-s2.b)/(s1.a-s2.a)) / (s1.a-s2.a) ) - (s1.b-s2.b)/(2*(s1.a-s2.a));
     //check if our intersection points are valid
     if (intX1>=s1.t1 && intX1>=s2.t1 && intX1<=s1.t2 && intX1<=s2.t2 && intX1>planeSweepX) {
         EventInfo e1;
@@ -116,8 +113,6 @@ int computeIntersections(set<EventInfo,leastEvent>& eventQ, SegmentInfo s1, Segm
         intC++;
     }
     return intC;
-    //TODO problem is that we check for out of bounds, it is not required, just dont insert
-    //event in eventQ, but count it as computed!
 }
 
 void printStatus(multiset<SegmentInfo,leastSegment> status) {
@@ -166,9 +161,19 @@ char execNextEvent(set<EventInfo,leastEvent>& eventQ, multiset<SegmentInfo,least
         //supposing only 2 involved segments
         std::pair<multiset<SegmentInfo,leastSegment>::iterator,multiset<SegmentInfo,leastSegment>::iterator> getIt;
         getIt = status.equal_range(nextEvent.involvedSegments.at(0));
+        //cout << "---" << endl;
+        //cout << nextEvent.involvedSegments.at(0).ref << endl;
+        //cout << nextEvent.involvedSegments.at(0).a*planeSweepX*planeSweepX + nextEvent.involvedSegments.at(0).b*planeSweepX + nextEvent.involvedSegments.at(0).c << endl;
         int checkCounter = 0;
+        /*for (multiset<SegmentInfo,leastSegment>::iterator checkIt = status.begin(); checkIt!=status.end(); checkIt++) {
+            checkCounter++;
+            cout << checkIt->ref << endl;
+            cout << checkIt->a*planeSweepX*planeSweepX + checkIt->b*planeSweepX + checkIt->c << endl;
+        }*/
         for (multiset<SegmentInfo,leastSegment>::iterator checkIt = getIt.first; checkIt!=getIt.second; checkIt++) {
             checkCounter++;
+            //cout << checkIt->ref << endl;
+            //cout << checkIt->a*planeSweepX*planeSweepX + checkIt->b*planeSweepX + checkIt->c << endl;
         }
         if (checkCounter>2) {
             cout << "Unexpected number of intersecting segments: " << checkCounter  << " at point: " << planeSweepX << endl;
@@ -177,7 +182,6 @@ char execNextEvent(set<EventInfo,leastEvent>& eventQ, multiset<SegmentInfo,least
         tempswap.a = getIt.first->a; tempswap.b = getIt.first->b; tempswap.c = getIt.first->c;
         tempswap.t1 = getIt.first->t1; tempswap.t2 = getIt.first->t2; tempswap.ref = getIt.first->ref;
         getIt.second--;
-        //cout << "BEFORE " << getIt.first->a << getIt.second->a << endl;
         SegmentInfo new1;
         getIt.first->a = getIt.second->a; getIt.first->b = getIt.second->b; getIt.first->c = getIt.second->c;
         getIt.first->t1 = getIt.second->t1; getIt.first->t2 = getIt.second->t2; getIt.first->ref = getIt.second->ref;
@@ -186,17 +190,16 @@ char execNextEvent(set<EventInfo,leastEvent>& eventQ, multiset<SegmentInfo,least
         //suppose 2 segments in intersection
         multiset<SegmentInfo,leastSegment>::iterator si1 = getIt.first;
         multiset<SegmentInfo,leastSegment>::iterator si2 = getIt.second;
-        //cout << "AFTER " << si1->a << endl;
         //check intersections of si1 with new adjacents
         if (si1 != status.begin()) {
-            intersectionsC += computeIntersections(eventQ, *si1, *std::prev(si1));
+            intersectionsC += computeIntersections(eventQ, *std::prev(si1), *si1);
         }
         if (si1 != std::prev(status.end())) {
             intersectionsC += computeIntersections(eventQ, *si1, *std::next(si1));
         }
         //avoid duplicates
         if (si2 != status.begin() && std::prev(si2) != si1) {
-            intersectionsC += computeIntersections(eventQ, *si2, *std::prev(si2));
+            intersectionsC += computeIntersections(eventQ, *std::prev(si2), *si2);
         }
         if (si2 != std::prev(status.end()) && std::next(si2) != si1) {
             intersectionsC += computeIntersections(eventQ, *si2, *std::next(si2));
