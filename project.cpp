@@ -10,7 +10,7 @@ using namespace std;
 static string inputFile = "input3.txt";
 static string outputFile = "output.txt";
 
-double planeSweepX;
+long double planeSweepX;
 //logging variables
 static int totals=0;
 static int totali=0;
@@ -18,14 +18,14 @@ static int totali=0;
 class SegmentInfo {
     public:
         mutable int ref;
-        mutable double a, b, c, t1, t2;
+        mutable long double a, b, c, t1, t2;
 };
 
 class EventInfo {
     public:
         char type;
         vector<SegmentInfo> involvedSegments;
-        double x, y;
+        long double x, y;
 };
 
 struct leastSegment {
@@ -55,7 +55,7 @@ void readInput(set<EventInfo,leastEvent>& eventQ) {
     }
     if (segmentsNum > 0) {
         int i;
-        double a, b, c, t1, t2;
+        long double a, b, c, t1, t2;
         for (i=0;i<segmentsNum;i++) {
             SegmentInfo segment;
             inFile >> a >> b >> c >> t1 >> t2;
@@ -82,15 +82,15 @@ void readInput(set<EventInfo,leastEvent>& eventQ) {
 }
 
 int computeIntersections(set<EventInfo,leastEvent>& eventQ, SegmentInfo s1, SegmentInfo s2) {
-    double intX1;
-    double intX2;
+    long double intX1;
+    long double intX2;
     int intC = 0;
     if (s1.a-s2.a == 0) {
         intX1 = (s2.c-s1.c)/(s1.b-s2.b);
         intX2 = intX1;
     }
     else {
-        double D = (s1.b-s2.b)*(s1.b-s2.b) - 4*(s1.a-s2.a)*(s1.c-s2.c);
+        long double D = (s1.b-s2.b)*(s1.b-s2.b) - 4*(s1.a-s2.a)*(s1.c-s2.c);
         if ( D < 0 ) {   
             return 0;
         }
